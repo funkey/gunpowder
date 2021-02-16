@@ -201,7 +201,8 @@ class Train(GenericTrain):
 
         # keys are argument names of model forward pass
         device_inputs = {
-            k: torch.as_tensor(v, device=self.device) for k, v in inputs.items()
+            k: torch.as_tensor(np.ascontiguousarray(v)).to(device=self.device, non_blocking=True)
+            for k, v in inputs.items()
         }
 
         # get outputs. Keys are tuple indices or model attr names as in self.outputs
@@ -222,7 +223,7 @@ class Train(GenericTrain):
         provided_loss_inputs = self.__collect_provided_loss_inputs(batch)
 
         device_loss_inputs = {
-            k: torch.as_tensor(v, device=self.device)
+            k: torch.as_tensor(np.ascontiguousarray(v)).to(device=self.device, non_blocking=True)
             for k, v in provided_loss_inputs.items()
         }
 
@@ -266,7 +267,7 @@ class Train(GenericTrain):
             spec = self.spec[array_key].copy()
             spec.roi = request[array_key].roi
             batch.arrays[array_key] = Array(
-                outputs[array_name].cpu().detach().numpy(), spec
+                outputs[array_name].detach().cpu().numpy(), spec
             )
 
         for array_name, array_key in self.gradients.items():
@@ -283,17 +284,10 @@ class Train(GenericTrain):
             spec = self.spec[array_key].copy()
             spec.roi = request[array_key].roi
             batch.arrays[array_key] = Array(
-                tensor.grad.cpu().detach().numpy(), spec
+                tensor.grad.detach().cpu().numpy(), spec
             )
 
-        for array_key, array_name in requested_outputs.items():
-            spec = self.spec[array_key].copy()
-            spec.roi = request[array_key].roi
-            batch.arrays[array_key] = Array(
-                outputs[array_name].cpu().detach().numpy(), spec
-            )
-
-        batch.loss = loss.cpu().detach().numpy()
+        batch.loss = loss.detach().cpu().numpy()
         self.iteration += 1
         batch.iteration = self.iteration
 

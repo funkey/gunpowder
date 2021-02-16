@@ -1,3 +1,4 @@
+import numpy as np
 from gunpowder.array import ArrayKey, Array
 from gunpowder.array_spec import ArraySpec
 from gunpowder.ext import torch
@@ -121,7 +122,8 @@ class Predict(GenericPredict):
 
     def get_inputs(self, batch):
         model_inputs = {
-            key: torch.as_tensor(batch[value].data, device=self.device)
+            key: torch.as_tensor(np.ascontiguousarray(batch[value].data)).to(
+                device=self.device, non_blocking=True)
             for key, value in self.inputs.items()
         }
         return model_inputs
@@ -156,7 +158,7 @@ class Predict(GenericPredict):
         for array_key, tensor in requested_outputs.items():
             spec = self.spec[array_key].copy()
             spec.roi = request[array_key].roi
-            batch.arrays[array_key] = Array(tensor.cpu().detach().numpy(), spec)
+            batch.arrays[array_key] = Array(tensor.detach().cpu().numpy(), spec)
 
     def stop(self):
         pass
