@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 class Reject(BatchFilter):
     '''Reject batches based on the masked-in vs. masked-out ratio.
 
+    If a pipeline also contains a :class:`RandomLocation` node,
+    :class:`Reject` needs to be placed downstream of it.
+
     Args:
 
         mask (:class:`ArrayKey`, optional):
